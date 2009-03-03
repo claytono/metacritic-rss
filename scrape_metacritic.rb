@@ -4,6 +4,7 @@ require 'rubygems'
 require 'rss/1.0'
 require 'rss/2.0'
 require 'rss/maker'
+require 'atom/feed'
 require 'open-uri'
 require 'mechanize'
 require 'activerecord'
@@ -92,22 +93,32 @@ RssItem.find(:all,
   end
 end
 
-feed = RSS::Maker.make('2.0') do |m|
-  m.channel.title = 'Metacritic.com: Xbox 360 Reviews'
-  m.channel.link  = 'http://www.metacritic.com/rss/games/xbox360'
-  m.channel.description = 'Metacritic Games compiles reviews from dozens of publications for every new Xbox 360 release.'
+feed = Atom::Feed.new
+feed.title = 'Metacritic.com: Xbox 360 Reviews'
+feed.id = config[:source_url]
+feed.links << Atom::Link.new(:href => 'http://www.metacritic.com/rss/games/xbox360')
+feed.subtitle = 'Metacritic Games compiles reviews from dozens of publications for every new Xbox 360 release.'
 
-  RssItem.find(:all, 
-               :order => 'date', 
-               :limit => 25,
-               :conditions => 'critic_score IS NOT NULL'
-               ).each do |row|
-    item = m.items.new_item
-    item.title = "#{row.critic_score}% #{row.title}"
-    item.link = row.link
-    item.date = row.date
-  end
+RssItem.find(:all, 
+             :order => 'updated_at', 
+             :limit => 25,
+             :conditions => 'critic_score IS NOT NULL'
+             ).each do |row|
+  puts "Writing #{row.title} to feed"
+  item = Atom::Entry.new
+  item.title = "#{row.critic_score}% #{row.title}"
+  item.id = row.link
+  item.links << Atom::Link.new(:href => row.link)
+  item.authors << Atom::Author.new(:name => 'Metacritic')
+  item.published = row.created_at
+  item.updated = row.updated_at
+  feed.updated = row.updated_at if not feed.updated or feed.updated < row.updated_at
+
+  item.content = "<img src=\"#{row.image_url}\"><div>#{row.description}</div>"
+  item.content.type = "html"
+  feed << item
 end
+feed.updated = Time.now unless feed.updated
 
 File.open(DestRss, "w") do |f|
   f.write(feed)
