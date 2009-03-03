@@ -79,8 +79,10 @@ RssItem.find(:all,
              :conditions => "critic_score IS NULL"
              ).each do |row|
   if row.needs_update?
-    puts "Loading review data for #{row.shortname}"
+    puts "#{row.shortname}: Loading review"
     row.load_review
+    puts "#{row.shortname}: score = #{row.critic_score}" if row.critic_score
+
   end
 end
 
