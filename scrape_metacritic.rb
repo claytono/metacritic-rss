@@ -9,6 +9,7 @@ require 'open-uri'
 require 'mechanize'
 require 'activerecord'
 require 'pp'
+require 'yaml'
 
 class MetacriticReview 
   attr_reader :title, :image_url, :critic_score, :description
@@ -69,20 +70,10 @@ class RssItem < ActiveRecord::Base
 
 end
 
-ActiveRecord::Base.establish_connection(
-  :adapter  => 'mysql',
-  :host     => 'localhost',
-  :database => 'metacritic',
-  :username => 'root',
-  :password => '',
-  :socket   => '/opt/local/var/run/mysql5/mysqld.sock'
-)
+config = YAML.load_file(ARGV[0])
+ActiveRecord::Base.establish_connection(config[:database])
 
-SourceRss = 'http://www.metacritic.com/rss/games/xbox360.xml'
-DestRss = "/tmp/xbox360.xml" 
-
-RssItem.load_from_rss(SourceRss)
-
+RssItem.load_from_rss(config[:source_url])
 # Update reviews
 RssItem.find(:all, 
              :conditions => "critic_score IS NULL"
@@ -120,7 +111,7 @@ RssItem.find(:all,
 end
 feed.updated = Time.now unless feed.updated
 
-File.open(DestRss, "w") do |f|
+File.open(config[:destination], "w") do |f|
   f.write(feed)
 end
 
