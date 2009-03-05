@@ -11,20 +11,6 @@ require 'activerecord'
 require 'pp'
 require 'yaml'
 
-class MetacriticReview 
-  attr_reader :title, :image_url, :critic_score, :description
-
-  def initialize(url)
-    agent = WWW::Mechanize.new
-    page = agent.get(url)
-    @image_url = page.search("//table[@id='scoretable']//img[@src]")[0]['src']
-    score_xpath = "//table[@id='scoretable']//img[contains(@alt, 'Metascore:')]"
-    @critic_score = page.search(score_xpath).attr('alt').gsub(/Metascore:\s*/i, '');
-    @title = page.search("//table[@class='gameshead']//td")[0].text
-    @description = page.search("//div[@id='midsection']/p").text    
-  end
-end
-
 class RssItem < ActiveRecord::Base
   def self.load_from_rss(url)
     content = ""
