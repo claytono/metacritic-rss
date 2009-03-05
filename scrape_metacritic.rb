@@ -6,7 +6,7 @@ require 'rss/2.0'
 require 'rss/maker'
 require 'atom/feed'
 require 'open-uri'
-require 'mechanize'
+require 'hpricot'
 require 'activerecord'
 require 'pp'
 require 'yaml'
@@ -43,17 +43,17 @@ class RssItem < ActiveRecord::Base
   end
 
   def load_review
-    agent = WWW::Mechanize.new
-    page = agent.get(self.link)
+    page = Hpricot(open(self.link))
     self.image_url = page.search("//table[@id='scoretable']//img[@src]")[0]['src']
-    score_xpath = "//table[@id='scoretable']//img[contains(@alt, 'Metascore:')]"
-    critic_score = page.search(score_xpath).attr('alt').gsub(/Metascore:\s*/i, '');
+    self.image_height = page.search("//table[@id='scoretable']//img[@src]")[0]['height']
+    self.image_width = page.search("//table[@id='scoretable']//img[@src]")[0]['width']
+    score_xpath = "//table[@id='scoretable']//img"
+    critic_score = page.search(score_xpath)[2][:alt].gsub(/Metascore:\s*/i, '')
     self.critic_score = critic_score if RssItem.valid_score?(critic_score)
-    self.title = page.search("//table[@class='gameshead']//td")[0].text
+    self.title = page.search("//table[@class='gameshead']//td")[0].to_plain_text
     self.description = page.search("//div[@id='midsection']/p").text
     self.save
   end
-
 end
 
 config = YAML.load_file(ARGV[0])
