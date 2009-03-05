@@ -31,7 +31,10 @@ class RssItem < ActiveRecord::Base
   end
 
   def needs_update?
-    not RssItem.valid_score?(self.critic_score)
+    return 1 unless RssItem.valid_score?(self.critic_score)
+    return 1 unless self.image_height
+    return 1 unless self.image_width
+    return
   end
   
   def self.valid_score?(score)
