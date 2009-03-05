@@ -11,7 +11,7 @@ require 'pp'
 require 'yaml'
 
 class RssItem < ActiveRecord::Base
-  def self.load_from_rss(url)
+  def self.load_from_rss(feedname, url)
     content = ""
     open(url) do |s| content = s.read end
     rss = RSS::Parser.parse(content, false)
@@ -22,11 +22,13 @@ class RssItem < ActiveRecord::Base
         link = normalize_link(item.link)
         shortname = link.gsub(/.*\/([^\/]+)$/, '\1')
         RssItem.create(:link      => link,
+                       :feedname  => feedname,
                        :shortname => shortname,
                        :date      => item.date.strftime("%Y-%m-%d %H:%M:%S")
                        )
       end
     end
+    return rss.channel
   end
 
   def needs_update?
@@ -58,50 +60,60 @@ class RssItem < ActiveRecord::Base
   end
 end
 
-config = YAML.load_file(ARGV[0])
-ActiveRecord::Base.establish_connection(config[:database])
+def write_feed(destination, feedname, self_link, source_feed_info) 
+  feed = Atom::Feed.new
+  feed.title = source_feed_info.title
+  feed.id = source_feed_info.link
+  feed.subtitle = source_feed_info.description
+  feed.links << Atom::Link.new(:href => self_link, :rel => 'self')
+  
+  RssItem.find(:all, 
+               :order => 'updated_at', 
+               :limit => 25,
+               :conditions => [ 'critic_score IS NOT NULL and feedname = ?', feedname]
+               ).each do |row|
+    puts "Writing #{row.title} to #{feedname}.xml"
+    item = Atom::Entry.new
+    item.title = "#{row.critic_score}% #{row.title}"
+    item.id = row.link
+    item.links << Atom::Link.new(:href => row.link)
+    item.authors << Atom::Author.new(:name => 'Metacritic')
+    item.published = row.created_at
+    item.updated = row.updated_at
+    feed.updated = row.updated_at if not feed.updated or feed.updated < row.updated_at
+    
+    content_str = "<img src=\"#{row.image_url}\""
+    content_str += " height=\"#{row.image_height}\"" if row.image_height
+    content_str += " width=\"#{row.image_width}\""   if row.image_width
+    description = Iconv.iconv('UTF-8//IGNORE//TRANSLIT', 'UTF-8', row.description)
+    content_str += "><div>#{description}</div>"
+    item.content = content_str
+    item.content.type = "html"
+    feed << item
+  end
+  feed.updated = Time.now unless feed.updated
 
-RssItem.load_from_rss(config[:source_url])
-# Update reviews
-RssItem.find(:all, 
-             :conditions => "critic_score IS NULL"
-             ).each do |row|
-  if row.needs_update?
-    puts "#{row.shortname}: Loading review"
-    row.load_review
-    puts "#{row.shortname}: score = #{row.critic_score}" if row.critic_score
-
+  filename = "#{destination}/#{feedname}.xml"
+  File.open(filename, "w") do |f|
+    f.write(feed)
   end
 end
 
-feed = Atom::Feed.new
-feed.title = 'Metacritic.com: Xbox 360 Reviews'
-feed.id = config[:source_url]
-feed.links << Atom::Link.new(:href => 'http://www.metacritic.com/rss/games/xbox360')
-feed.subtitle = 'Metacritic Games compiles reviews from dozens of publications for every new Xbox 360 release.'
+config = YAML.load_file(ARGV[0])
+ActiveRecord::Base.establish_connection(config[:database])
 
-RssItem.find(:all, 
-             :order => 'updated_at', 
-             :limit => 25,
-             :conditions => 'critic_score IS NOT NULL'
-             ).each do |row|
-  puts "Writing #{row.title} to feed"
-  item = Atom::Entry.new
-  item.title = "#{row.critic_score}% #{row.title}"
-  item.id = row.link
-  item.links << Atom::Link.new(:href => row.link)
-  item.authors << Atom::Author.new(:name => 'Metacritic')
-  item.published = row.created_at
-  item.updated = row.updated_at
-  feed.updated = row.updated_at if not feed.updated or feed.updated < row.updated_at
+config[:feeds].each_pair do |feedname, feed_info|
+  source_feed_info = RssItem.load_from_rss(feedname, feed_info[:source])
 
-  item.content = "<img src=\"#{row.image_url}\"><div>#{row.description}</div>"
-  item.content.type = "html"
-  feed << item
-end
-feed.updated = Time.now unless feed.updated
-
-File.open(config[:destination], "w") do |f|
-  f.write(feed)
+  # Update reviews
+  RssItem.find(:all, :conditions => { :feedname => feedname }).each do |row|
+    if row.needs_update?
+      puts "#{feedname}/#{row.shortname}: Loading review"
+      row.load_review
+      puts "#{feedname}/#{row.shortname}: score = #{row.critic_score}" if row.critic_score
+    end
+  end
+  write_feed(config[:destination], feedname, 
+             feed_info[:self], source_feed_info)
 end
 
