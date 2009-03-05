@@ -3,7 +3,6 @@
 require 'rubygems'
 require 'rss/1.0'
 require 'rss/2.0'
-require 'rss/maker'
 require 'atom/feed'
 require 'open-uri'
 require 'hpricot'
