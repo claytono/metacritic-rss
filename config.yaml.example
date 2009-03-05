@@ -1,0 +1,27 @@
+:destination: rss
+:feeds:
+  xbox360:
+    :source: http://www.metacritic.com/rss/games/xbox360.xml
+    :self: http://feeds2.feedburner.com/metacritic_xbox360
+  ds:
+    :source: http://www.metacritic.com/rss/games/ds.xml
+    :self: http://feeds2.feedburner.com/metacritic_ds
+  ps3: 
+    :source: http://www.metacritic.com/rss/games/ps3.xml
+    :self: http://feeds2.feedburner.com/metacritic_ps3
+  wii:
+    :source: http://www.metacritic.com/rss/games/wii.xml
+    :self: http://feeds2.feedburner.com/metacritic_wii
+  pc: 
+    :source: http://www.metacritic.com/rss/games/pc.xml
+    :self: http://feeds2.feedburner.com/metacritic_pc
+  psp:
+    :source: http://www.metacritic.com/rss/games/psp.xml
+    :self: http://feeds2.feedburner.com/metacritic_psp
+:database:
+  :adapter: mysql
+  :host: localhost
+  :database: metacritic
+  :username: root
+  :password: ""
+  :socket: /opt/local/var/run/mysql5/mysqld.sock
