@@ -99,6 +99,12 @@ def write_feed(destination, feedname, self_link, source_feed_info)
   end
 end
 
+def usage
+  puts "scrape_metacritic <configfile.yaml>"
+  exit
+end
+
+usage unless ARGV.size == 1
 config = YAML.load_file(ARGV[0])
 ActiveRecord::Base.establish_connection(config[:database])
 
