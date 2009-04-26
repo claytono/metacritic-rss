@@ -113,8 +113,9 @@ def usage
   exit
 end
 
-usage unless ARGV.size == 1
-config = YAML.load_file(ARGV[0])
+APP_BASE = File.dirname(File.expand_path(__FILE__))
+usage unless ARGV.size == 0
+config = YAML.load_file(APP_BASE + "/config.yaml")
 ActiveRecord::Base.establish_connection(config[:database])
 
 config[:feeds].each_pair do |feedname, feed_info|
