@@ -37,7 +37,7 @@ class Review < ActiveRecord::Base
     return 1 unless self.image_width
     return
   end
-  
+
   def self.valid_score?(score)
     score.to_i > 0 and score.to_i <= 100
   end
@@ -81,7 +81,7 @@ def write_feed(destination, feedname, self_link, source_feed_info)
     item.published = row.created_at
     item.updated = row.updated_at
     feed.updated = row.updated_at if not feed.updated or feed.updated < row.updated_at
-    
+
     content_str = "<img src=\"#{row.image_url}\""
     content_str += " height=\"#{row.image_height}\"" if row.image_height
     content_str += " width=\"#{row.image_width}\""   if row.image_width
@@ -121,7 +121,7 @@ config[:feeds].each_pair do |feedname, feed_info|
       end
     end
   end
-  write_feed(config[:destination], feedname, 
+  write_feed(config[:destination], feedname,
              feed_info[:self], source_feed_info)
 end
 
