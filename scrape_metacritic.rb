@@ -116,7 +116,9 @@ config[:feeds].each_pair do |feedname, feed_info|
     if row.needs_update?
       puts "#{feedname}/#{row.shortname}: Loading review"
       row.load_review
-      puts "#{feedname}/#{row.shortname}: score = #{row.critic_score}" if row.critic_score
+      if row.critic_score
+        puts "#{feedname}/#{row.shortname}: score = #{row.critic_score}"
+      end
     end
   end
   write_feed(config[:destination], feedname, 
