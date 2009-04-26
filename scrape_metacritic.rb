@@ -10,27 +10,8 @@ require 'activerecord'
 require 'pp'
 require 'yaml'
 
-class Review < ActiveRecord::Base
-  def self.load_from_rss(feedname, url)
-    content = ""
-    open(url) do |s| content = s.read end
-    rss = RSS::Parser.parse(content, false)
-    rss.items.each do |item|
-      db_item = Review.find(:first,
-                            :conditions => [ "link = ?", normalize_link(item.link) ])
-      unless db_item
-        link = normalize_link(item.link)
-        shortname = link.gsub(/.*\/([^\/]+)$/, '\1')
-        Review.create(:link      => link,
-                      :feedname  => feedname,
-                      :shortname => shortname,
-                      :date      => item.date.strftime("%Y-%m-%d %H:%M:%S")
-                      )
-      end
-    end
-    return rss.channel
-  end
 
+class Review < ActiveRecord::Base
   def needs_update?
     return 1 unless Review.valid_score?(self.critic_score)
     return 1 unless self.image_height
@@ -40,10 +21,6 @@ class Review < ActiveRecord::Base
 
   def self.valid_score?(score)
     score.to_i > 0 and score.to_i <= 100
-  end
-
-  def self.normalize_link(link)
-    link.gsub(/\?part=rss/, '')
   end
 
   def load_review
@@ -58,6 +35,30 @@ class Review < ActiveRecord::Base
     self.description = page.search("//div[@id='midsection']/p").text
     self.save
   end
+end
+
+def normalize_link(link)
+  link.gsub(/\?part=rss/, '')
+end
+
+def load_from_rss(feedname, url)
+  content = ""
+  open(url) do |s| content = s.read end
+  rss = RSS::Parser.parse(content, false)
+  rss.items.each do |item|
+    db_item = Review.find(:first,
+                          :conditions => [ "link = ?", normalize_link(item.link) ])
+    unless db_item
+      link = normalize_link(item.link)
+      shortname = link.gsub(/.*\/([^\/]+)$/, '\1')
+      Review.create(:link      => link,
+                    :feedname  => feedname,
+                    :shortname => shortname,
+                    :date      => item.date.strftime("%Y-%m-%d %H:%M:%S")
+                    )
+    end
+  end
+  return rss.channel
 end
 
 def write_feed(destination, feedname, self_link, source_feed_info)
@@ -109,7 +110,7 @@ config = YAML.load_file(ARGV[0])
 ActiveRecord::Base.establish_connection(config[:database])
 
 config[:feeds].each_pair do |feedname, feed_info|
-  source_feed_info = Review.load_from_rss(feedname, feed_info[:source])
+  source_feed_info = load_from_rss(feedname, feed_info[:source])
 
   # Update reviews
   Review.find(:all, :conditions => { :feedname => feedname }).each do |row|
