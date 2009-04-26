@@ -22,7 +22,7 @@
 DROP TABLE IF EXISTS `rss_items`;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8;
-CREATE TABLE `rss_items` (
+CREATE TABLE `reviews` (
   `id` bigint(20) unsigned NOT NULL auto_increment,
   `feedname` varchar(255) NOT NULL,
   `shortname` varchar(255) NOT NULL,

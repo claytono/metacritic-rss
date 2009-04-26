@@ -10,29 +10,29 @@ require 'activerecord'
 require 'pp'
 require 'yaml'
 
-class RssItem < ActiveRecord::Base
+class Review < ActiveRecord::Base
   def self.load_from_rss(feedname, url)
     content = ""
     open(url) do |s| content = s.read end
     rss = RSS::Parser.parse(content, false)
-    rss.items.each do |item| 
-      db_item = RssItem.find(:first, 
-                             :conditions => [ "link = ?", normalize_link(item.link) ])
+    rss.items.each do |item|
+      db_item = Review.find(:first,
+                            :conditions => [ "link = ?", normalize_link(item.link) ])
       unless db_item
         link = normalize_link(item.link)
         shortname = link.gsub(/.*\/([^\/]+)$/, '\1')
-        RssItem.create(:link      => link,
-                       :feedname  => feedname,
-                       :shortname => shortname,
-                       :date      => item.date.strftime("%Y-%m-%d %H:%M:%S")
-                       )
+        Review.create(:link      => link,
+                      :feedname  => feedname,
+                      :shortname => shortname,
+                      :date      => item.date.strftime("%Y-%m-%d %H:%M:%S")
+                      )
       end
     end
     return rss.channel
   end
 
   def needs_update?
-    return 1 unless RssItem.valid_score?(self.critic_score)
+    return 1 unless Review.valid_score?(self.critic_score)
     return 1 unless self.image_height
     return 1 unless self.image_width
     return
@@ -53,25 +53,25 @@ class RssItem < ActiveRecord::Base
     self.image_width = page.search("//table[@id='scoretable']//img[@src]")[0]['width']
     score_xpath = "//table[@id='scoretable']//img"
     critic_score = page.search(score_xpath)[2][:alt].gsub(/Metascore:\s*/i, '')
-    self.critic_score = critic_score if RssItem.valid_score?(critic_score)
+    self.critic_score = critic_score if Review.valid_score?(critic_score)
     self.title = page.search("//table[@class='gameshead']//td")[0].to_plain_text
     self.description = page.search("//div[@id='midsection']/p").text
     self.save
   end
 end
 
-def write_feed(destination, feedname, self_link, source_feed_info) 
+def write_feed(destination, feedname, self_link, source_feed_info)
   feed = Atom::Feed.new
   feed.title = source_feed_info.title
   feed.id = source_feed_info.link
   feed.subtitle = source_feed_info.description
   feed.links << Atom::Link.new(:href => self_link, :rel => 'self')
-  
-  RssItem.find(:all, 
-               :order => 'updated_at', 
-               :limit => 25,
-               :conditions => [ 'critic_score IS NOT NULL and feedname = ?', feedname]
-               ).each do |row|
+
+  Review.find(:all,
+              :order => 'updated_at',
+              :limit => 25,
+              :conditions => [ 'critic_score IS NOT NULL and feedname = ?', feedname]
+              ).each do |row|
     puts "Writing #{row.title} to #{feedname}.xml"
     item = Atom::Entry.new
     item.title = "#{row.critic_score}% #{row.title}"
@@ -103,10 +103,10 @@ config = YAML.load_file(ARGV[0])
 ActiveRecord::Base.establish_connection(config[:database])
 
 config[:feeds].each_pair do |feedname, feed_info|
-  source_feed_info = RssItem.load_from_rss(feedname, feed_info[:source])
+  source_feed_info = Review.load_from_rss(feedname, feed_info[:source])
 
   # Update reviews
-  RssItem.find(:all, :conditions => { :feedname => feedname }).each do |row|
+  Review.find(:all, :conditions => { :feedname => feedname }).each do |row|
     if row.needs_update?
       puts "#{feedname}/#{row.shortname}: Loading review"
       row.load_review
