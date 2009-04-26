@@ -10,6 +10,8 @@ require 'activerecord'
 require 'pp'
 require 'yaml'
 
+class FeedDetail < ActiveRecord::Base
+end
 
 class Review < ActiveRecord::Base
   def needs_update?
@@ -45,6 +47,12 @@ def load_from_rss(feedname, url)
   content = ""
   open(url) do |s| content = s.read end
   rss = RSS::Parser.parse(content, false)
+  detail = FeedDetail.find_or_initialize_by_feedname(feedname)
+  detail.title = rss.channel.title
+  detail.feed_url  = rss.channel.link
+  detail.description = rss.channel.description
+  detail.save
+
   rss.items.each do |item|
     db_item = Review.find(:first,
                           :conditions => [ "link = ?", normalize_link(item.link) ])
@@ -58,14 +66,14 @@ def load_from_rss(feedname, url)
                     )
     end
   end
-  return rss.channel
 end
 
-def write_feed(destination, feedname, self_link, source_feed_info)
+def write_feed(destination, feedname, self_link)
   feed = Atom::Feed.new
-  feed.title = source_feed_info.title
-  feed.id = source_feed_info.link
-  feed.subtitle = source_feed_info.description
+  detail = FeedDetail.find_by_feedname(feedname)
+  feed.title = detail.title
+  feed.id = detail.feed_url
+  feed.subtitle = detail.description
   feed.links << Atom::Link.new(:href => self_link, :rel => 'self')
 
   Review.find(:all,
@@ -110,7 +118,7 @@ config = YAML.load_file(ARGV[0])
 ActiveRecord::Base.establish_connection(config[:database])
 
 config[:feeds].each_pair do |feedname, feed_info|
-  source_feed_info = load_from_rss(feedname, feed_info[:source])
+  load_from_rss(feedname, feed_info[:source])
 
   # Update reviews
   Review.find(:all, :conditions => { :feedname => feedname }).each do |row|
@@ -122,7 +130,6 @@ config[:feeds].each_pair do |feedname, feed_info|
       end
     end
   end
-  write_feed(config[:destination], feedname,
-             feed_info[:self], source_feed_info)
+  write_feed(config[:destination], feedname, feed_info[:self])
 end
 
