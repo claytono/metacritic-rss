@@ -126,12 +126,12 @@ def write_feed(destination, feedname, self_link)
 end
 
 def usage
-  puts "scrape_metacritic <configfile.yaml>"
+  puts "scrape_metacritic <rss|index>"
   exit
 end
 
+usage unless ARGV.size == 1
 APP_BASE = File.dirname(File.expand_path(__FILE__))
-usage unless ARGV.size == 0
 config = YAML.load_file(APP_BASE + "/config.yaml")
 ActiveRecord::Base.establish_connection(config[:database])
 
