@@ -15,10 +15,19 @@ end
 
 class Review < ActiveRecord::Base
   def needs_update?
-    return 1 unless Review.valid_score?(self.critic_score)
-    return 1 unless self.image_height
-    return 1 unless self.image_width
-    return
+    return true unless self.last_checked
+    time_between = self.times_checked * 60 * 60 * 12
+    next_check = self.last_checked + time_between
+    if Time.now < next_check
+      puts "skipping #{shortname} due to time"
+      return false
+    end
+
+    return true unless Review.valid_score?(self.critic_score)
+    return true unless self.image_height
+    return true unless self.image_width
+
+    return false
   end
 
   def self.valid_score?(score)
