@@ -71,10 +71,10 @@ def load_from_rss(feedname, url)
   detail.save
 
   rss.items.each do |item|
+    link = normalize_link(item.link)
     db_item = Review.find(:first,
-                          :conditions => [ "link = ?", normalize_link(item.link) ])
+                          :conditions => [ "link = ?", link ])
     unless db_item
-      link = normalize_link(item.link)
       shortname = link.gsub(/.*\/([^\/]+)$/, '\1')
       Review.create(:link      => link,
                     :feedname  => feedname,
