@@ -60,6 +60,26 @@ def normalize_link(link)
   link.gsub(/\?part=rss/, '')
 end
 
+def load_from_index(feedname, url)
+  page = Hpricot(open(url))
+  page.search("//table[@class='index']/tr/td/a").each do |elem|
+    link = URI(url)
+    link.path = elem['href']
+    link = link.to_s
+    db_item = Review.find(:first,
+                          :conditions => [ "link = ?", link ])
+    unless db_item
+      shortname = link.gsub(/.*\/([^\/]+)$/, '\1')
+      puts "Found #{shortname}"
+      Review.create(:link      => link,
+                    :feedname  => feedname,
+                    :shortname => shortname,
+                    :date      => Time.now.strftime("%Y-%m-%d %H:%M:%S")
+                    )
+    end
+  end
+end
+
 def load_from_rss(feedname, url)
   content = ""
   open(url) { |s| content = s.read }
@@ -135,11 +155,27 @@ APP_BASE = File.dirname(File.expand_path(__FILE__))
 config = YAML.load_file(APP_BASE + "/config.yaml")
 ActiveRecord::Base.establish_connection(config[:database])
 
-config[:feeds].each_pair do |feedname, feed_info|
-  load_from_rss(feedname, feed_info[:source])
+if ARGV[0] == "rss"
+  config[:feeds].each_pair do |feedname, feed_info|
+    next unless feed_info[:source]
+    puts "Looking for new reviews in #{feedname} RSS feed"
+    load_from_rss(feedname, feed_info[:source])
+  end
+elsif ARGV[0] == "index"
+  config[:feeds].each_pair do |feedname, feed_info|
+    next unless feed_info[:index]
+    puts "Looking for new reviews in #{feedname} index"
+    load_from_index(feedname, feed_info[:index])
+  end
+else
+  usage
+end
 
-  # Update reviews
-  Review.find(:all, :conditions => { :feedname => feedname }).each do |row|
+config[:feeds].each_pair do |feedname, feed_info|
+  puts "Updating reviews"
+  Review.find(:all, :conditions => { :feedname => feedname },
+              :order => 'shortname'
+              ).each do |row|
     if row.needs_update?
       puts "#{feedname}/#{row.shortname}: Loading review"
       row.load_review
