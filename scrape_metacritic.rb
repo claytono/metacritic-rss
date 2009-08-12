@@ -54,7 +54,7 @@ end
 
 def load_from_rss(feedname, url)
   content = ""
-  open(url) do |s| content = s.read end
+  open(url) { |s| content = s.read }
   rss = RSS::Parser.parse(content, false)
   detail = FeedDetail.find_or_initialize_by_feedname(feedname)
   detail.title = rss.channel.title
@@ -142,4 +142,3 @@ config[:feeds].each_pair do |feedname, feed_info|
   end
   write_feed(config[:destination], feedname, feed_info[:self])
 end
-

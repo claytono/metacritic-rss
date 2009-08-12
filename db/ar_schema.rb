@@ -21,16 +21,16 @@ ActiveRecord::Schema.define(:version => 2009051901) do
   add_index "feed_details", ["feedname"], :name => "index_feed_details_on_feedname", :unique => true
 
   create_table "reviews", :force => true do |t|
-    t.string   "feedname",     :null => false
-    t.string   "shortname",    :null => false
-    t.datetime "date",         :null => false
-    t.text     "link",         :null => false
+    t.string   "feedname",                     :null => false
+    t.string   "shortname",                    :null => false
+    t.datetime "date",                         :null => false
+    t.text     "link",                         :null => false
     t.string   "title"
     t.binary   "description"
-    t.text     "image_url",    :null => false
+    t.text     "image_url",                    :null => false
     t.integer  "critic_score"
-    t.datetime "created_at",   :null => false
-    t.datetime "updated_at",   :null => false
+    t.datetime "created_at",                   :null => false
+    t.datetime "updated_at",                   :null => false
     t.integer  "image_height"
     t.integer  "image_width"
     t.integer  "times_checked", :default => 0
