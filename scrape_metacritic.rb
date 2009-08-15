@@ -43,7 +43,10 @@ class Review < ActiveRecord::Base
       self.image_width = page.search("//div[@id='bigpic']/img")[0]['width']
       score_xpath = "//table[@id='scoretable']//img"
       critic_score = page.search("//div[@id='metascore']").text.to_i
-      self.critic_score = critic_score if Review.valid_score?(critic_score)
+      if Review.valid_score?(critic_score)
+        self.score_changed = Time.now if self.critic_score != critic_score
+        self.critic_score = critic_score
+      end
       self.title = page.search("//div[@id='center']/h1").text
       self.description = page.search("//div[@id='productsummary']/p").text
     rescue
@@ -114,7 +117,7 @@ def write_feed(destination, feedname, self_link)
   feed.links << Atom::Link.new(:href => self_link, :rel => 'self')
 
   Review.find(:all,
-              :order => 'updated_at',
+              :order => 'score_changed',
               :limit => 25,
               :conditions => [ 'critic_score IS NOT NULL and feedname = ?', feedname]
               ).each do |row|

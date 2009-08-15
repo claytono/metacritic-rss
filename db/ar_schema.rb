@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 2009051901) do
+ActiveRecord::Schema.define(:version => 2009081101) do
 
   create_table "feed_details", :force => true do |t|
     t.string "feedname",    :null => false
@@ -35,6 +35,7 @@ ActiveRecord::Schema.define(:version => 2009051901) do
     t.integer  "image_width"
     t.integer  "times_checked", :default => 0
     t.datetime "last_checked"
+    t.date     "score_changed"
   end
 
   add_index "reviews", ["link"], :name => "link"
