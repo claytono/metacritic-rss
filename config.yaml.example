@@ -1,22 +1,29 @@
 :destination: rss
 :feeds:
+:feeds:
   xbox360:
     :source: http://www.metacritic.com/rss/games/xbox360.xml
+    :index: http://www.metacritic.com/games/xbox360/alpha/
     :self: http://feeds2.feedburner.com/metacritic_xbox360
   ds:
     :source: http://www.metacritic.com/rss/games/ds.xml
+    :index: http://www.metacritic.com/games/ds/alpha
     :self: http://feeds2.feedburner.com/metacritic_ds
   ps3: 
     :source: http://www.metacritic.com/rss/games/ps3.xml
+    :index: http://www.metacritic.com/games/ps3/alpha
     :self: http://feeds2.feedburner.com/metacritic_ps3
   wii:
     :source: http://www.metacritic.com/rss/games/wii.xml
+    :index: http://www.metacritic.com/games/wii/alpha
     :self: http://feeds2.feedburner.com/metacritic_wii
   pc: 
     :source: http://www.metacritic.com/rss/games/pc.xml
+    :index: http://www.metacritic.com/games/pc/alpha
     :self: http://feeds2.feedburner.com/metacritic_pc
   psp:
     :source: http://www.metacritic.com/rss/games/psp.xml
+    :index: http://www.metacritic.com/games/psp/alpha
     :self: http://feeds2.feedburner.com/metacritic_psp
 :database:
   :adapter: mysql
