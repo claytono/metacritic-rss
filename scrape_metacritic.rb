@@ -73,7 +73,7 @@ def load_from_index(feedname, url)
                           :conditions => [ "link = ?", link ])
     unless db_item
       shortname = link.gsub(/.*\/([^\/]+)$/, '\1')
-      puts "Found #{shortname}"
+      puts "Found #{feedname}/#{shortname}"
       Review.create(:link      => link,
                     :feedname  => feedname,
                     :shortname => shortname,
