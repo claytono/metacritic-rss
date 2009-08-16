@@ -24,7 +24,7 @@ ActiveRecord::Schema.define(:version => 2009081502) do
     t.string   "feedname",                      :null => false
     t.string   "shortname",                     :null => false
     t.datetime "date",                          :null => false
-    t.string   "link",          :default => "", :null => false
+    t.string   "link",                          :null => false
     t.string   "title"
     t.binary   "description"
     t.text     "image_url",                     :null => false
@@ -40,6 +40,4 @@ ActiveRecord::Schema.define(:version => 2009081502) do
   end
 
   add_index "reviews", ["link"], :name => "index_reviews_on_link"
-  add_index "reviews", ["link"], :name => "link"
-
 end
