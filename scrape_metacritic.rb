@@ -56,6 +56,7 @@ class Review < ActiveRecord::Base
       puts "Could not load and parse #{self.link}: #{$!}"
       puts $!.backtrace
     ensure
+      self.reload
       self.times_checked += 1
       self.last_checked = Time.now
       self.save
