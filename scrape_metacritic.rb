@@ -140,9 +140,12 @@ def write_feed(destination, feedname, self_link)
     content_str += " height=\"#{row.image_height}\"" if row.image_height
     content_str += " width=\"#{row.image_width}\""   if row.image_width
     content_str += ">\n";
+    content_str += "<p>"
+    content_str += "<b>Critic Score:</b> #{row.critic_score}%<br>\n"
     if row.release_date
-      content_str += "<div><b>Release Date:</b> #{row.release_date}</div>\n"
+      content_str += "<b>Release Date:</b> #{row.release_date}<br>\n"
     end
+    content_str += "</p>"
     description = Iconv.iconv('UTF-8//IGNORE//TRANSLIT', 'UTF-8', row.description)
     content_str += "<div>#{description}</div>"
     item.content = content_str
