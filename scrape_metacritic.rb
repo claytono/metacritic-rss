@@ -26,6 +26,7 @@ class Review < ActiveRecord::Base
     return true unless Review.valid_score?(self.critic_score)
     return true unless self.image_height
     return true unless self.image_width
+    return true unless self.release_date
 
     return false
   end
@@ -49,6 +50,8 @@ class Review < ActiveRecord::Base
       end
       self.title = page.search("//div[@id='center']/h1").text
       self.description = page.search("//div[@id='productsummary']/p").text
+      release_date = page.search("//div[@id='productinfo']/p[6]/text()").to_s.strip
+      self.release_date = Date.strptime(release_date, "%B %d, %Y")
     rescue
       puts "Could not load and parse #{self.link}: #{$!}"
     ensure
@@ -117,9 +120,9 @@ def write_feed(destination, feedname, self_link)
   feed.links << Atom::Link.new(:href => self_link, :rel => 'self')
 
   Review.find(:all,
-              :order => 'score_changed',
+              :order => 'score_changed desc, release_date desc',
               :limit => 25,
-              :conditions => [ 'critic_score IS NOT NULL and feedname = ?', feedname]
+              :conditions => [ 'critic_score IS NOT NULL AND feedname = ?', feedname]
               ).each do |row|
     puts "Writing #{row.title} to #{feedname}.xml"
     item = Atom::Entry.new
@@ -134,8 +137,12 @@ def write_feed(destination, feedname, self_link)
     content_str = "<img src=\"#{row.image_url}\""
     content_str += " height=\"#{row.image_height}\"" if row.image_height
     content_str += " width=\"#{row.image_width}\""   if row.image_width
+    content_str += ">\n";
+    if row.release_date
+      content_str += "<div><b>Release Date:</b> #{row.release_date}</div>\n"
+    end
     description = Iconv.iconv('UTF-8//IGNORE//TRANSLIT', 'UTF-8', row.description)
-    content_str += "><div>#{description}</div>"
+    content_str += "<div>#{description}</div>"
     item.content = content_str
     item.content.type = "html"
     feed << item
