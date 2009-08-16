@@ -54,6 +54,7 @@ class Review < ActiveRecord::Base
       self.release_date = Date.strptime(release_date, "%B %d, %Y")
     rescue
       puts "Could not load and parse #{self.link}: #{$!}"
+      puts $!.backtrace
     ensure
       self.times_checked += 1
       self.last_checked = Time.now
